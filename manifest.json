@@ -1,6 +1,6 @@
 {
   "name": "Infinite Minesweeper",
-  "short_name": "Minesweeper",
+  "short_name": "Infinite Minesweeper",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#cdebb0",
