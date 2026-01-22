@@ -3,22 +3,27 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-<title>Infinite Minesweeper — Play</title>
+<title>Infinite Minesweeper</title>
 
-<!-- PWA / iOS -->
+<!-- App name for iOS / PWA -->
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Infinite Minesweeper">
+<meta name="application-name" content="Infinite Minesweeper">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#eaf8ef">
+
+<!-- App icons (place files in /icons/ as described earlier) -->
+<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+<link rel="apple-touch-icon" sizes="167x167" href="icons/icon-167.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="120x120" href="icons/icon-120.png">
+<link rel="manifest" href="manifest.json">
 
 <!-- Font -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-  /* -------------------------
-     Global / touch behavior
-     ------------------------- */
   html,body{height:100%;margin:0;overflow:hidden; overscroll-behavior: none; -webkit-overflow-scrolling: auto;}
   *{box-sizing:border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;}
   :root{
@@ -32,78 +37,41 @@
   }
   body { font-family: 'Poppins', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
 
-  /* -------------------------
-     Canvas / Game area
-     ------------------------- */
   #game{position:fixed; left:0; top:0; right:0; bottom:0; background:var(--bg); touch-action: none; -webkit-user-drag: none;}
   canvas{display:block; width:100%; height:100%;}
 
-  /* -------------------------
-     Game UI (top-left pause, right tools)
-     ------------------------- */
-  .pauseBtn{
-    position:fixed; left:12px; top:12px; z-index:1500;
-    width:46px; height:46px; border-radius:12px;
-    display:flex; align-items:center; justify-content:center;
-    background:var(--panel); box-shadow:var(--glass-shadow); border:1px solid rgba(0,0,0,0.05);
-    font-size:20px; cursor:pointer;
-  }
-  .ui {
-    position:fixed; right:12px; top:12px; z-index:1500;
-    display:flex; flex-direction:column; gap:10px; pointer-events:auto;
-  }
-  .tool{
-    width:60px; height:60px; border-radius:14px; display:flex;align-items:center;justify-content:center;
-    background:linear-gradient(180deg,#ffffff,#f7fff5); box-shadow:var(--glass-shadow); cursor:pointer;
-    border:1px solid rgba(0,0,0,0.05); font-size:22px;
-  }
+  .pauseBtn{ position:fixed; left:12px; top:12px; z-index:1500; width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:var(--panel); box-shadow:var(--glass-shadow); border:1px solid rgba(0,0,0,0.05); font-size:20px; cursor:pointer;}
+  .ui { position:fixed; right:12px; top:12px; z-index:1500; display:flex; flex-direction:column; gap:10px; pointer-events:auto; }
+  .tool{ width:60px; height:60px; border-radius:14px; display:flex;align-items:center;justify-content:center; background:linear-gradient(180deg,#ffffff,#f7fff5); box-shadow:var(--glass-shadow); cursor:pointer; border:1px solid rgba(0,0,0,0.05); font-size:22px; }
   .tool.active{ outline:3px solid rgba(47,166,106,0.18); transform:translateY(-3px); }
 
-  /* -------------------------
-     Overlay / Menu (main) - centered
-     ------------------------- */
-  .overlay {
-    position:fixed; inset:0; z-index:2000; display:flex; align-items:center; justify-content:center;
-    background: rgba(8,12,10,0.18);
-    backdrop-filter: blur(8px) saturate(1.05);
-  }
-  .menu {
-    width: min(980px, 96vw); max-height:86vh; overflow:auto;
-    background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(250,250,250,0.96));
-    border-radius:18px; padding:22px; box-shadow:0 30px 80px rgba(2,10,6,0.2);
-    display:flex; gap:18px; align-items:flex-start; position:relative;
-  }
+  .overlay { position:fixed; inset:0; z-index:2000; display:flex; align-items:center; justify-content:center; background: rgba(8,12,10,0.18); backdrop-filter: blur(8px) saturate(1.05); }
+  .menu { width: min(980px, 96vw); max-height:86vh; overflow:auto; background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(250,250,250,0.96)); border-radius:18px; padding:22px; box-shadow:0 30px 80px rgba(2,10,6,0.2); display:flex; gap:18px; align-items:flex-start; position:relative; }
 
-  /* Left title column */
   .menuLeft { width:44%; min-width:280px; padding:12px 6px 12px 6px; }
-  .bigTitle{
-    font-weight:800; line-height:0.9;
-    color:#0d2a18; font-size:48px; letter-spacing:-1px;
-  }
+  .bigTitle{ font-weight:800; line-height:0.9; color:#0d2a18; font-size:48px; letter-spacing:-1px; }
   .bigTitle .line1{ display:block; color:var(--accent); }
-  .bigTitle .line2{ display:block; color:#0b2b20; opacity:0.92; margin-top:6px; }
+  .bigTitle .line2{ display:block; color:#000; animation: colorToAccent 0.6s ease forwards 1s, accentPulse 2.7s ease-in-out infinite 1.7s; opacity:0.98; margin-top:6px; }
+
   .titleNote{ margin-top:14px; color:var(--muted); font-weight:600; font-size:14px; }
 
-  /* Right content column (actions) */
   .menuRight{ flex:1; padding:6px 6px; min-width:320px; }
-  .actions { display:flex; flex-direction:column; gap:12px; }
+  .actions { display:flex; flex-direction:column; gap:12px; align-items:stretch; } /* make buttons full width */
   .primaryBtn{
     appearance:none; border:none; cursor:pointer;
     padding:14px 18px; border-radius:12px; font-weight:800; font-size:16px;
     color:white; background:linear-gradient(180deg,var(--accent),var(--accent-2)); box-shadow: 0 10px 30px rgba(46,160,100,0.16);
+    width:100%; text-align:center;
   }
   .secondaryBtn{
     padding:12px 14px; border-radius:10px; border:1px solid rgba(0,0,0,0.06);
     background:rgba(255,255,255,0.9); cursor:pointer; font-weight:700; color:var(--muted);
+    width:100%; text-align:center;
   }
   .smallNote{ color:var(--muted); font-size:13px; margin-top:8px; line-height:1.3; }
 
   .worldList{ margin-top:10px; display:flex; flex-direction:column; gap:8px; }
-  .worldCard{
-    display:flex; justify-content:space-between; align-items:center; gap:8px;
-    padding:10px; border-radius:10px; background:linear-gradient(180deg,rgba(255,255,255,0.95), rgba(250,250,250,0.95));
-    border:1px solid rgba(0,0,0,0.04);
-  }
+  .worldCard{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px; border-radius:10px; background:linear-gradient(180deg,rgba(255,255,255,0.95), rgba(250,250,250,0.95)); border:1px solid rgba(0,0,0,0.04); }
   .worldLeft{ display:flex; align-items:center; gap:12px; }
   .worldTitle{ font-weight:800; color:#0b2b20; }
   .worldSeed{ font-size:12px; color:var(--muted); }
@@ -117,29 +85,21 @@
   .howtoBox{ color:var(--muted); font-size:14px; line-height:1.45; }
 
   .disabled { opacity:0.4; pointer-events:none; }
+  @media (max-width:700px){ .menu{ flex-direction:column; width:96vw; padding:14px; } .menuLeft{ width:100%; } .menuRight{ width:100%; } .bigTitle{ font-size:36px; text-align:left; } }
 
-  @media (max-width:700px){
-    .menu{ flex-direction:column; width:96vw; padding:14px; }
-    .menuLeft{ width:100%; }
-    .menuRight{ width:100%; }
-    .bigTitle{ font-size:36px; text-align:left; }
-  }
-
-  @keyframes accentPulse {
-    0% { color: var(--accent); transform: translateY(0px); }
-    50% { color: #37c271; transform: translateY(-3px); }
-    100% { color: var(--accent); transform: translateY(0px); }
-  }
-  .bigTitle .line1 { animation: accentPulse 2.2s ease-in-out infinite; }
-  .bigTitle .line2 { animation: accentPulse 2.7s ease-in-out infinite; animation-delay: 0.4s; opacity:0.96; }
-
+  @keyframes colorToAccent { from { color: #000; transform: translateY(0px); } to   { color: var(--accent); transform: translateY(-2px); } }
+  @keyframes accentPulse { 0% { filter: brightness(1); transform: translateY(0px); } 50% { filter: brightness(1.06); transform: translateY(-2px); } 100% { filter: brightness(1); transform: translateY(0px); } }
   button:focus, input:focus { outline: 3px solid rgba(39,174,96,0.14); outline-offset:2px; }
 
+  /* small saved badge */
+  #savedBadge{
+    position:fixed; left:50%; top:12px; transform:translateX(-50%); z-index:3000;
+    background:rgba(0,0,0,0.72); color:white; padding:8px 12px; border-radius:10px; display:none; font-weight:700;
+  }
 </style>
 </head>
 <body>
 
-<!-- Game canvas & UI -->
 <div id="game"><canvas id="c"></canvas></div>
 
 <div class="pauseBtn" id="pauseBtn" title="Menu">⏸</div>
@@ -169,15 +129,23 @@
         <button id="btnLoad" class="secondaryBtn">Load Game</button>
         <button id="btnSettings" class="secondaryBtn">Settings</button>
         <button id="btnHow" class="secondaryBtn">How to play</button>
-        <div style="display:flex; gap:10px; margin-top:8px; align-items:center;">
-          <button id="btnResume" class="secondaryBtn" title="Resume">Resume</button>
-          <div class="smallNote" style="flex:1;">Resume is hidden until you pick or create a world.</div>
+
+        <!-- Resume / Save row (Save shown only when opened from pause button) -->
+        <div style="display:flex; gap:10px; margin-top:8px;">
+          <div style="flex:1;">
+            <button id="btnResume" class="secondaryBtn" title="Resume" style="display:none">Resume</button>
+          </div>
+          <div style="flex:1;">
+            <button id="btnSave" class="secondaryBtn" title="Save" style="display:none">Save</button>
+          </div>
         </div>
+
+        <div class="smallNote" style="margin-top:6px;">Create or load a world to play.</div>
       </div>
 
       <div id="panelNew" style="display:none">
         <div style="font-weight:800; font-size:18px; margin-bottom:6px">Create new world</div>
-        <div class="smallNote">Give your world a name and optionally enter a seed. The seed is a text string — same seed = same world.</div>
+        <div class="smallNote">Give your world a name and optionally enter a seed. Same seed = same world.</div>
         <div style="margin-top:10px">
           <label for="newName">World name</label>
           <input id="newName" type="text" placeholder="My World">
@@ -212,9 +180,11 @@
       <div id="panelHow" style="display:none">
         <div style="font-weight:800; font-size:18px; margin-bottom:6px">How to play</div>
         <div class="howtoBox">
-          <p><strong>Tap</strong> tiles in <em>Shovel</em> mode to reveal. Switch to <em>Flag</em> to mark suspected mines.</p>
-          <p>The <strong>first</strong> tile is always safe. If you hit a bomb the whole 9×9 chunk will be disabled — the exploded tile shows a <strong>💣</strong>.</p>
-          <p>Solve neighboring chunks to revive a disabled chunk. Your progress is saved locally per world.</p>
+          <p><strong>Tap</strong> tiles in <em>Shovel</em> mode to reveal. Switch to <em>Flag</em> mode to mark suspected mines with 🚩.</p>
+          <p><strong>First click is always safe.</strong> If your first click would be a mine it will be cleared.</p>
+          <p>If you reveal a bomb, the whole 9×9 chunk will be disabled and the exploded tile will show a <strong>💣</strong>. To revive it: solve its surrounding chunks (the red outline shows which area needs solving), or use a revive item (coming later).</p>
+          <p>Progress is saved locally per world. Seeds are deterministic — enter the same seed to regenerate the same world layout (biomes and mines).</p>
+          <p>Pinch to zoom, drag to pan. When zoomed out the map simplifies to speed up rendering.</p>
         </div>
         <div style="margin-top:12px; display:flex; gap:8px;">
           <button id="cancelHow" class="secondaryBtn">Back</button>
@@ -225,18 +195,24 @@
   </div>
 </div>
 
-<script>
-/* --------------- Same game core as before with requested fixes --------------- */
+<div id="savedBadge">Saved ✔</div>
 
-/* CONFIG */
+<script>
+/* Minimal focused edits to fix manual save reliability.
+   - saveCurrent now verifies the write by reading it back, updates worlds metadata, and shows feedback.
+   - Save button calls saveCurrent() and reports success/failure.
+   Everything else left as before.
+*/
+
+/* ===== CONFIG ===== */
 const CHUNK_TILES = 9;
-let DEFAULT_TILE = 36;
-let NOISE_SCALE = 0.16;
+const DEFAULT_TILE = 36;
 const MINE_PROB = 0.14;
 const SAVE_PREFIX = 'ims_save_v4_';
 const WORLDS_KEY = 'ims_worlds_v4';
+let NOISE_SCALE = 0.16;
 
-/* Canvas setup */
+/* ===== Canvas + state ===== */
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d', { alpha: false });
 let DPR = Math.max(1, window.devicePixelRatio || 1);
@@ -244,18 +220,15 @@ function resize(){ DPR = Math.max(1, window.devicePixelRatio || 1); canvas.width
 window.addEventListener('resize', resize);
 resize();
 
-/* Camera and world state */
-let cam = { x:0, y:0, scale:1 };
+let cam = { x:0, y:0, scale:1.0 };
 const chunks = new Map();
 let firstClickDone = false;
 
-/* World management */
+/* world management */
 let worlds = [];
 let currentWorldId = null;
 let currentSeedString = '';
 let currentSeedNumber = 0;
-
-/* load world metadata */
 function loadWorldMeta(){ try{ const raw = localStorage.getItem(WORLDS_KEY); worlds = raw ? JSON.parse(raw) : []; }catch(e){ worlds=[]; } }
 function saveWorldMeta(){ localStorage.setItem(WORLDS_KEY, JSON.stringify(worlds)); }
 loadWorldMeta();
@@ -267,220 +240,680 @@ function hashStringToNumber(s){
   h += h<<13; h ^= h>>>7; h += h<<3; h ^= h>>>17; h += h<<5;
   return h >>> 0;
 }
-function seedFromCoords(cx,cy,salt=0){
-  let s = (cx*0x6a09e667 + cy*0xbb67ae85 + (currentSeedNumber ^ salt)) | 0; if (s===0) s=1; return s>>>0;
-}
-function rnd_mix(u){ u ^= u << 13; u ^= u >>> 17; u ^= u << 5; return (u>>>0); }
-function makeRNG(seed){ let x = seed>>>0; return ()=>{ x = rnd_mix(x); return (x>>>0)/4294967296; }; }
+function seedFromCoords(cx,cy,salt=0){ let s=(cx*0x6a09e667 + cy*0xbb67ae85 + (currentSeedNumber ^ salt))|0; if(s===0) s=1; return s>>>0; }
+function rnd(u){ u ^= u << 13; u ^= u >>> 17; u ^= u << 5; return (u>>>0); }
+function makeRNG(seed){ let x = seed>>>0; return ()=>{ x = rnd(x); return (x>>>0)/4294967296; }; }
 
-/* smooth noise for biomes */
-function hash01(ix,iy,salt=0x9e3779b1){
-  let n = (ix*374761393 + iy*668265263 + salt) | 0; n = (n ^ (n >>> 13)) * 1274126177; return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
+/* seeded smooth noise for biomes */
+function hash01(ix,iy,salt=0){
+  let n = (ix*374761393 + iy*668265263 + (salt|0)) | 0;
+  n = (n ^ (n >>> 13)) * 1274126177;
+  return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
 }
 function lerp(a,b,t){ return a + (b-a)*t; }
-function smoothNoise(x,y){ const ix=Math.floor(x), iy=Math.floor(y); const fx = x-ix, fy=y-iy; const a=hash01(ix,iy), b=hash01(ix+1,iy), c=hash01(ix,iy+1), d=hash01(ix+1,iy+1); const u = fx*fx*(3-2*fx), v = fy*fy*(3-2*fy); return lerp(lerp(a,b,u), lerp(c,d,u), v); }
-function pickBiome(cx,cy){ const v = smoothNoise(cx*NOISE_SCALE, cy*NOISE_SCALE); if (v < 0.6) return 'grass'; if (v < 0.85) return 'desert'; return 'ice'; }
+function smoothNoise(x,y,seedSalt=0){
+  const ix=Math.floor(x), iy=Math.floor(y);
+  const fx = x-ix, fy=y-iy;
+  const a=hash01(ix,iy,seedSalt), b=hash01(ix+1,iy,seedSalt), c=hash01(ix,iy+1,seedSalt), d=hash01(ix+1,iy+1,seedSalt);
+  const u = fx*fx*(3-2*fx), v = fy*fy*(3-2*fy);
+  return lerp(lerp(a,b,u), lerp(c,d,u), v);
+}
+function pickBiome(cx,cy){ const v = smoothNoise(cx * NOISE_SCALE, cy * NOISE_SCALE, currentSeedNumber); if (v < 0.6) return 'grass'; if (v < 0.85) return 'desert'; return 'ice'; }
 
-/* chunks */
 function keyFor(cx,cy){ return cx+','+cy; }
 function ensureChunk(cx,cy){
-  const k = keyFor(cx,cy);
-  if (chunks.has(k)) return chunks.get(k);
+  const key = keyFor(cx,cy);
+  if (chunks.has(key)) return chunks.get(key);
   const seed = seedFromCoords(cx,cy);
   const rng = makeRNG(seed);
   const tiles = new Array(CHUNK_TILES*CHUNK_TILES);
-  let mineCount=0;
-  for (let ty=0; ty<CHUNK_TILES; ty++) for (let tx=0; tx<CHUNK_TILES; tx++){ const idx = ty*CHUNK_TILES + tx; const mine = rng() < MINE_PROB; if (mine) mineCount++; tiles[idx] = { mine, revealed:false, flagged:false, adj:0, exploded:false }; }
-  for (let ty=0; ty<CHUNK_TILES; ty++) for (let tx=0; tx<CHUNK_TILES; tx++){ let adj=0; for (let oy=-1; oy<=1; oy++) for (let ox=-1; ox<=1; ox++){ if (ox===0 && oy===0) continue; const nx = tx+ox, ny = ty+oy; if (nx>=0 && nx<CHUNK_TILES && ny>=0 && ny<CHUNK_TILES){ if (tiles[ny*CHUNK_TILES + nx].mine) adj++; } } tiles[ty*CHUNK_TILES + tx].adj = adj; }
+  let mineCount = 0;
+  for (let ty=0; ty<CHUNK_TILES; ty++){
+    for (let tx=0; tx<CHUNK_TILES; tx++){
+      const idx = ty*CHUNK_TILES + tx;
+      const mine = rng() < MINE_PROB;
+      if (mine) mineCount++;
+      tiles[idx] = { mine, revealed:false, flagged:false, adj:0, exploded:false };
+    }
+  }
+  for (let ty=0; ty<CHUNK_TILES; ty++){
+    for (let tx=0; tx<CHUNK_TILES; tx++){
+      let adj=0;
+      for (let oy=-1; oy<=1; oy++) for (let ox=-1; ox<=1; ox++){
+        if (ox===0 && oy===0) continue;
+        const nx = tx+ox, ny = ty+oy;
+        if (nx>=0 && nx<CHUNK_TILES && ny>=0 && ny<CHUNK_TILES){
+          if (tiles[ny*CHUNK_TILES + nx].mine) adj++;
+        }
+      }
+      tiles[ty*CHUNK_TILES + tx].adj = adj;
+    }
+  }
   const biome = pickBiome(cx,cy);
-  const rec = { cx, cy, tiles, generated:true, solved:false, disabled:false, reviveAvailable:true, mineCount, reviveTime:0, needsSolve:false, biome };
-  chunks.set(k, rec); return rec;
+  const c = { cx, cy, tiles, generated:true, solved:false, disabled:false, reviveAvailable:true, mineCount, reviveTime:0, needsSolve:false, biome };
+  chunks.set(key, c);
+  return c;
 }
 
 /* tile helpers */
-function getTileAt(wx,wy){
-  const cx = Math.floor(wx / CHUNK_TILES), cy = Math.floor(wy / CHUNK_TILES);
-  const chunk = ensureChunk(cx,cy);
-  const tx = ((wx % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
-  const ty = ((wy % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
-  return { chunk, tile: chunk.tiles[ty*CHUNK_TILES + tx], tx, ty, wx, wy };
+function getTileAt(worldTileX, worldTileY){
+  const cx = Math.floor(worldTileX / CHUNK_TILES), cy = Math.floor(worldTileY / CHUNK_TILES);
+  const chunk = ensureChunk(cx, cy);
+  const tx = ((worldTileX % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
+  const ty = ((worldTileY % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
+  return { chunk, tile: chunk.tiles[ty*CHUNK_TILES + tx], tx, ty, worldTx:worldTileX, worldTy:worldTileY };
 }
-function getAdj(wx,wy){ let c=0; for (let oy=-1; oy<=1; oy++) for (let ox=-1; ox<=1; ox++){ if (ox===0 && oy===0) continue; if (getTileAt(wx+ox, wy+oy).tile.mine) c++; } return c; }
+function getAdj(worldTileX, worldTileY){
+  let count = 0;
+  for (let oy=-1; oy<=1; oy++) for (let ox=-1; ox<=1; ox++){
+    if (ox===0 && oy===0) continue;
+    const nt = getTileAt(worldTileX + ox, worldTileY + oy);
+    if (nt.tile.mine) count++;
+  }
+  return count;
+}
 
-/* reveal & safety */
-function clearAround(wx,wy){ const affected = new Set(); for (let oy=-1; oy<=1; oy++) for (let ox=-1; ox<=1; ox++){ const nx = wx+ox, ny = wy+oy; const inf = getTileAt(nx,ny); affected.add(keyFor(inf.chunk.cx, inf.chunk.cy)); if (inf.tile.mine) inf.tile.mine = false; } affected.forEach(k=>{ const [cx,cy] = k.split(',').map(Number); for (let ty=-1; ty<=CHUNK_TILES; ty++) for (let tx=-1; tx<=CHUNK_TILES; tx++){ const wx2 = cx*CHUNK_TILES + tx, wy2 = cy*CHUNK_TILES + ty; const inf = getTileAt(wx2, wy2); if (inf.tile.revealed) inf.tile.adj = getAdj(wx2, wy2); } }); }
-function canReveal(wx,wy){ if (!firstClickDone) return true; for (let dy=-2; dy<=2; dy++) for (let dx=-2; dx<=2; dx++){ if (getTileAt(wx+dx, wy+dy).tile.revealed) return true; } return false; }
-function revealTile(wx,wy){
-  if (!canReveal(wx,wy)) return;
-  const inf0 = getTileAt(wx,wy), { chunk: c0, tile: t0 } = inf0;
-  if (c0.disabled) return; if (t0.flagged || t0.revealed) return;
-  if (!firstClickDone){ clearAround(wx,wy); firstClickDone = true; }
-  if (t0.mine){ t0.exploded = true; t0.revealed = true; c0.disabled = true; c0.revealedDeath = { wx, wy }; updateNeedsSolve(); scheduleImmediateSave(); return; }
-  const q = [[wx,wy]]; const visited = new Set();
-  while (q.length){
-    const [sx,sy] = q.shift(); const k = sx+','+sy; if (visited.has(k)) continue; visited.add(k);
-    const info = getTileAt(sx,sy); const tchunk = info.chunk; if (tchunk.disabled) continue;
-    const tt = info.tile; if (tt.revealed || tt.flagged) continue;
-    tt.revealed = true; tt.adj = getAdj(sx,sy);
-    if (tt.adj === 0) for (let oy=-1; oy<=1; oy++) for (let ox=-1; ox<=1; ox++){ if (ox===0 && oy===0) continue; q.push([sx+ox, sy+oy]); }
+/* first-click safety */
+function clearMinesAround(wx,wy){
+  const affected = new Set();
+  for (let oy=-1; oy<=1; oy++) for (let ox=-1; ox<=1; ox++){
+    const nx = wx+ox, ny = wy+oy;
+    const info = getTileAt(nx,ny);
+    affected.add(keyFor(info.chunk.cx, info.chunk.cy));
+    if (info.tile.mine) info.tile.mine = false;
+  }
+  affected.forEach(k=>{
+    const [cx,cy] = k.split(',').map(Number);
+    for (let ty=-1; ty<=CHUNK_TILES; ty++) for (let tx=-1; tx<=CHUNK_TILES; tx++){
+      const wx2 = cx*CHUNK_TILES + tx, wy2 = cy*CHUNK_TILES + ty;
+      const info = getTileAt(wx2, wy2);
+      if (info.tile.revealed) info.tile.adj = getAdjacencySafe(wx2, wy2);
+    }
+  });
+}
+function getAdjacencySafe(wx,wy){ let count=0; for (let oy=-1; oy<=1; oy++) for (let ox=-1; ox<=1; ox++){ if (ox===0 && oy===0) continue; const t = getTileAt(wx+ox, wy+oy); if (t.tile.mine) count++; } return count; }
+
+function canRevealAt(worldTileX, worldTileY){
+  if (!firstClickDone) return true;
+  for (let dy=-2; dy<=2; dy++){
+    for (let dx=-2; dx<=2; dx++){
+      const wx = worldTileX + dx, wy = worldTileY + dy;
+      const info = getTileAt(wx, wy);
+      if (info.tile.revealed) return true;
+    }
+  }
+  return false;
+}
+
+function revealTile(worldTileX, worldTileY){
+  if (!canRevealAt(worldTileX, worldTileY)) return;
+  const info0 = getTileAt(worldTileX, worldTileY);
+  const { chunk: c0, tile: t0 } = info0;
+  if (c0.disabled) return;
+  if (t0.flagged || t0.revealed) return;
+  if (!firstClickDone){ clearMinesAround(worldTileX, worldTileY); firstClickDone = true; }
+  if (t0.mine){
+    t0.exploded = true;
+    t0.revealed = true;
+    c0.disabled = true;
+    c0.revealedDeath = { wx: worldTileX, wy: worldTileY };
+    updateNeedsSolve();
+    saveCurrent();
+    return;
+  }
+  const queue = [[worldTileX, worldTileY]];
+  const visited = new Set();
+  while (queue.length){
+    const [wx,wy] = queue.shift();
+    const key = wx+','+wy;
+    if (visited.has(key)) continue;
+    visited.add(key);
+    const obj = getTileAt(wx, wy);
+    const tchunk = obj.chunk;
+    if (tchunk.disabled) continue;
+    const tt = obj.tile;
+    if (tt.revealed || tt.flagged) continue;
+    tt.revealed = true;
+    tt.adj = getAdj(wx, wy);
+    if (tt.adj === 0){
+      for (let oy=-1; oy<=1; oy++) for (let ox=-1; ox<=1; ox++){
+        if (ox===0 && oy===0) continue;
+        queue.push([wx+ox, wy+oy]);
+      }
+    }
     updateChunkSolved(tchunk);
   }
-  updateNeedsSolve(); scheduleImmediateSave();
+  updateNeedsSolve();
+  saveCurrent();
 }
 
-/* chunk solved & revive */
-function autoFlag(chunk){ for (let i=0;i<chunk.tiles.length;i++) if (chunk.tiles[i].mine) chunk.tiles[i].flagged = true; }
-function onChunkSolved(chunk){ autoFlag(chunk); for (const c of chunks.values()){ if (!c.disabled) continue; let all=true; for (let oy=-1; oy<=1; oy++) for (let ox=-1; ox<=1; ox++){ if (ox===0 && oy===0) continue; const n = ensureChunk(c.cx+ox, c.cy+oy); if (!n.solved) { all=false; break; } } if (all){ c.disabled=false; c.reviveTime = Date.now(); c.solved=false; for (const t of c.tiles) t.exploded = false; } } updateNeedsSolve(); }
-function updateChunkSolved(chunk){ if (chunk.disabled){ chunk.solved=false; return; } let all=true; for (let i=0;i<chunk.tiles.length;i++){ const t = chunk.tiles[i]; if (!t.mine && !t.revealed){ all=false; break; } } const newly = (!chunk.solved && all); chunk.solved = all; if (newly) onChunkSolved(chunk); }
+/* auto-flag & revive logic */
+function autoFlagMinesInChunk(chunk){
+  for (let i=0;i<chunk.tiles.length;i++){
+    const t = chunk.tiles[i];
+    if (t.mine) t.flagged = true;
+  }
+}
+function onChunkSolved(chunk){
+  autoFlagMinesInChunk(chunk);
+  for (const c of chunks.values()){
+    if (!c.disabled) continue;
+    let allNeighborsSolved = true;
+    for (let oy=-1; oy<=1; oy++) for (let ox=-1; ox<=1; ox++){
+      if (ox===0 && oy===0) continue;
+      const n = ensureChunk(c.cx + ox, c.cy + oy);
+      if (!n.solved) { allNeighborsSolved = false; break; }
+    }
+    if (allNeighborsSolved){
+      c.disabled = false;
+      c.reviveTime = Date.now();
+      c.solved = false;
+      for (const t of c.tiles) t.exploded = false;
+    }
+  }
+  updateNeedsSolve();
+}
+function updateChunkSolved(chunk){
+  if (chunk.disabled){ chunk.solved = false; return; }
+  let allRevealed = true;
+  for (let i=0;i<chunk.tiles.length;i++){
+    const t = chunk.tiles[i];
+    if (!t.mine && !t.revealed){ allRevealed = false; break; }
+  }
+  const newlySolved = (!chunk.solved && allRevealed);
+  chunk.solved = allRevealed;
+  if (newlySolved) onChunkSolved(chunk);
+}
 
-/* flags */
-function toggleFlag(wx,wy){ const inf = getTileAt(wx,wy); if (inf.chunk.disabled) return; if (inf.tile.revealed) return; inf.tile.flagged = !inf.tile.flagged; updateChunkSolved(inf.chunk); updateNeedsSolve(); scheduleImmediateSave(); }
+/* toggle flag */
+function toggleFlag(worldTileX, worldTileY){
+  const info = getTileAt(worldTileX, worldTileY);
+  const { chunk, tile } = info;
+  if (chunk.disabled) return;
+  if (tile.revealed) return;
+  tile.flagged = !tile.flagged;
+  updateChunkSolved(chunk);
+  updateNeedsSolve();
+  saveCurrent();
+}
 
-/* needsSolve marking */
-function updateNeedsSolve(){ for (const c of chunks.values()) c.needsSolve = false; for (const c of chunks.values()){ if (!c.disabled) continue; for (let oy=-1; oy<=1; oy++) for (let ox=-1; ox<=1; ox++){ if (ox===0 && oy===0) continue; const n = ensureChunk(c.cx+ox, c.cy+oy); if (!n.disabled) n.needsSolve = true; } } }
+/* needsSolve */
+function updateNeedsSolve(){
+  for (const c of chunks.values()) c.needsSolve = false;
+  for (const c of chunks.values()){
+    if (!c.disabled) continue;
+    for (let oy=-1; oy<=1; oy++) for (let ox=-1; ox<=1; ox++){
+      if (ox===0 && oy===0) continue;
+      const n = ensureChunk(c.cx + ox, c.cy + oy);
+      if (!n.disabled) n.needsSolve = true;
+    }
+  }
+}
 
-/* ---------- Drawing (kept as before) ---------- */
+/* ===== Rendering (ice revealed background same as covered) ===== */
 const NUMBER_COLORS = {1:'#264bb2',2:'#2d8a33',3:'#b22222',4:'#5b2a86',5:'#7a3e1e',6:'#2b7b7b',7:'#1d1d1d',8:'#5f6a73'};
+
 function draw(){
-  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle = '#eaf8ef'; ctx.fillRect(0,0,canvas.width,canvas.height);
-  const cssTile = DEFAULT_TILE * cam.scale; const tx = -cam.x * cssTile * DPR, ty = -cam.y * cssTile * DPR; ctx.setTransform(DPR,0,0,DPR,tx,ty);
-  const vL = cam.x - 2, vT = cam.y - 2, vR = (canvas.width / DPR) / cssTile + cam.x + 2, vB = (canvas.height / DPR) / cssTile + cam.y + 2;
-  const startChunkX = Math.floor(vL / CHUNK_TILES), endChunkX = Math.floor(vR / CHUNK_TILES);
-  const startChunkY = Math.floor(vT / CHUNK_TILES), endChunkY = Math.floor(vB / CHUNK_TILES);
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = '#eaf8ef';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  const cssTile = DEFAULT_TILE * cam.scale;
+  const tx = -cam.x * cssTile * DPR;
+  const ty = -cam.y * cssTile * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, tx, ty);
+
+  const visibleLeft = cam.x - 2;
+  const visibleTop  = cam.y - 2;
+  const visibleRight = (canvas.width / DPR) / cssTile + cam.x + 2;
+  const visibleBottom= (canvas.height / DPR) / cssTile + cam.y + 2;
+
+  const startChunkX = Math.floor(visibleLeft / CHUNK_TILES);
+  const endChunkX   = Math.floor(visibleRight / CHUNK_TILES);
+  const startChunkY = Math.floor(visibleTop / CHUNK_TILES);
+  const endChunkY   = Math.floor(visibleBottom / CHUNK_TILES);
+
   const chunkCount = (endChunkX - startChunkX + 1) * (endChunkY - startChunkY + 1);
   const tileW_canvas = Math.max(1, Math.round(cssTile * DPR));
   const heavySimplify = (tileW_canvas <= 5 * DPR && chunkCount > 200);
-  for (let ccx = startChunkX; ccx <= endChunkX; ccx++) for (let ccy = startChunkY; ccy <= endChunkY; ccy++){ const chunk = ensureChunk(ccx, ccy); if (heavySimplify) drawChunkMin(chunk, cssTile); else drawChunk(chunk, cssTile); }
-  if (tileW_canvas > 8) drawChunkGrid(startChunkX, startChunkY, endChunkX, endChunkY, cssTile);
+
+  for (let ccx = startChunkX; ccx <= endChunkX; ccx++){
+    for (let ccy = startChunkY; ccy <= endChunkY; ccy++){
+      const chunk = ensureChunk(ccx, ccy);
+      if (heavySimplify) drawChunkMinimized(chunk, cssTile);
+      else drawChunk(chunk, cssTile);
+    }
+  }
+
+  if (tileW_canvas > 8) drawGlobalChunkGrid(startChunkX, startChunkY, endChunkX, endChunkY, cssTile);
   drawMergedNeedsSolveOutlines(startChunkX, startChunkY, endChunkX, endChunkY, cssTile);
-  ctx.save(); ctx.globalCompositeOperation='multiply'; ctx.fillStyle = 'rgba(250,255,250,0.06)'; ctx.fillRect(cam.x * cssTile - 10000, cam.y * cssTile - 10000, (canvas.width / DPR) + 20000, (canvas.height / DPR) + 20000); ctx.restore();
-  ctx.setTransform(1,0,0,1,0,0); requestAnimationFrame(draw);
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.fillStyle = `rgba(250,255,250,0.06)`;
+  ctx.fillRect(cam.x * cssTile - 10000, cam.y * cssTile - 10000, (canvas.width / DPR) + 20000, (canvas.height / DPR) + 20000);
+  ctx.restore();
+
+  ctx.setTransform(1,0,0,1,0,0);
+
+  requestAnimationFrame(draw);
 }
-function drawChunkMin(chunk, tileW){ const chunkX = chunk.cx * CHUNK_TILES * tileW, chunkY = chunk.cy * CHUNK_TILES * tileW, chunkW = tileW * CHUNK_TILES; let bg = '#e6f7dc', covered='#d1eac0', revealed='#f7fff5'; if (chunk.biome === 'desert'){ bg = '#fff0d6'; covered = '#f5e7b2'; revealed = '#fff7e0'; } if (chunk.biome === 'ice'){ bg = '#f7fbff'; covered = '#eaf4ff'; revealed = '#ffffff'; } ctx.fillStyle = chunk.disabled ? '#ffd7d9' : bg; ctx.fillRect(chunkX, chunkY, chunkW, chunkW); if (chunk.disabled){ ctx.fillStyle='rgba(200,20,20,0.95)'; ctx.fillRect(chunkX,chunkY,chunkW,chunkW); } for (let i=0;i<chunk.tiles.length;i++){ const t = chunk.tiles[i]; const tx = i % CHUNK_TILES, ty = Math.floor(i/CHUNK_TILES); const x = chunkX + tx*tileW, y = chunkY + ty*tileW; if (!t.revealed){ ctx.fillStyle = covered; ctx.fillRect(x+1,y+1,tileW-2,tileW-2); } else { ctx.fillStyle = revealed; ctx.fillRect(x+1,y+1,tileW-2,tileW-2); } if (t.flagged){ if (tileW >= 6){ ctx.font = `${Math.floor(tileW*0.8)}px system-ui`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('🚩', x + tileW/2, y + tileW/2); } else { ctx.fillStyle='#c33'; ctx.fillRect(x+1,y+1,Math.max(1,tileW-2),Math.max(1,tileW-2)); } } if (t.exploded){ ctx.font = `${Math.max(8,Math.floor(tileW*0.9))}px system-ui`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('💣', x + tileW/2, y + tileW/2); } } }
-function drawChunk(chunk, tileW){ const chunkX = chunk.cx * CHUNK_TILES * tileW, chunkY = chunk.cy * CHUNK_TILES * tileW, chunkW = tileW * CHUNK_TILES; let grass = ["#dff7d9","#e7f8de","#e0f3d6","#f0f9e6"]; let covered = '#d1eac0', revealed = '#f7fff5'; if (chunk.biome==='desert'){ grass = ["#f2e6b6","#f6e9c0","#efe1a8"]; covered = '#f5e7b2'; revealed='#fff7e0'; } if (chunk.biome==='ice'){ grass = ["#f7fbff","#eef6ff","#f0f9ff"]; covered = '#eaf4ff'; revealed='#ffffff'; } ctx.fillStyle = chunk.disabled ? '#e9efe0' : (chunk.biome==='desert'? '#fff0d6' : (chunk.biome==='ice'? '#f7fbff' : '#e6f7dc')); ctx.fillRect(chunkX, chunkY, chunkW, chunkW); const simplified = tileW <= 12; if (simplified){ drawChunkMin(chunk, tileW); return; } for (let ty=0; ty<CHUNK_TILES; ty++) for (let tx=0; tx<CHUNK_TILES; tx++){ const t = chunk.tiles[ty*CHUNK_TILES + tx]; const x = chunkX + tx*tileW, y = chunkY + ty*tileW; ctx.fillStyle = grass[(Math.abs(chunk.cx*7 + chunk.cy*11 + tx*3 + ty*5) % grass.length)]; ctx.fillRect(x, y, tileW-1, tileW-1); if (t.revealed){ ctx.fillStyle = (t.adj===0 && chunk.biome==='ice') ? covered : revealed; ctx.fillRect(x+2,y+2,tileW-4,tileW-4); if (t.mine){ if (t.exploded){ ctx.font = `${Math.max(12,Math.floor(tileW*0.9))}px system-ui`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('💣', x+tileW/2, y+tileW/2); } else { ctx.fillStyle='#222'; ctx.beginPath(); ctx.arc(x+tileW/2,y+tileW/2,tileW*0.22,0,Math.PI*2); ctx.fill(); } } else if (t.adj>0){ const fs = Math.max(10,Math.floor(tileW*0.55)); ctx.font = `700 ${fs}px system-ui`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth = Math.max(1,DPR*0.7)/DPR; ctx.strokeText(t.adj, x+tileW/2, y+tileW/2 + (DPR*0.3)/DPR); ctx.fillStyle = NUMBER_COLORS[t.adj] || '#000'; ctx.fillText(t.adj, x+tileW/2, y+tileW/2 + (DPR*0.3)/DPR); } } else { ctx.fillStyle = covered; ctx.fillRect(x+1,y+1,tileW-2,tileW-2); ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(x+1,y+1,tileW/2,tileW/6); if (t.flagged){ ctx.font=`${Math.floor(tileW*0.9)}px system-ui`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('🚩', x+tileW/2, y+tileW/2); } } } if (chunk.disabled){ ctx.fillStyle='rgba(60,10,10,0.22)'; ctx.fillRect(chunkX,chunkY,chunkW,chunkW); ctx.fillStyle='#fff'; ctx.font=`${Math.max(18,Math.floor(chunkW/6))}px system-ui`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('💀', chunkX + chunkW/2, chunkY + chunkW/2); for (let ty=0; ty<CHUNK_TILES; ty++) for (let tx=0; tx<CHUNK_TILES; tx++){ const t = chunk.tiles[ty*CHUNK_TILES + tx]; if (!t.exploded) continue; const x = chunkX + tx*tileW, y = chunkY + ty*tileW; const s = Math.max(12, Math.floor(tileW*0.9)); ctx.font = `${s}px system-ui`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('💣', x + tileW/2, y + tileW/2); } } else if (chunk.solved){ ctx.fillStyle='rgba(40,40,40,0.12)'; ctx.fillRect(chunkX, chunkY, chunkW, chunkW); } if (chunk.reviveTime && (Date.now() - chunk.reviveTime) <= 2200){ drawRectBorder(chunkX, chunkY, chunkW, chunkW, '#d33', Math.max(1/DPR,1/DPR)); } }
-function drawChunkGrid(sx,sy,ex,ey,tileW){ const borderCss = Math.max(1/DPR, 0.5/DPR); ctx.fillStyle = `rgba(0,0,0,0.04)`; const topY = sy * CHUNK_TILES * tileW, height = (ey - sy + 1) * CHUNK_TILES * tileW; for (let cx = sx; cx <= ex+1; cx++){ const x = cx * CHUNK_TILES * tileW; ctx.fillRect(x, topY, borderCss, height); } const leftX = sx * CHUNK_TILES * tileW, width = (ex - sx + 1) * CHUNK_TILES * tileW; for (let cy = sy; cy <= ey+1; cy++){ const y = cy * CHUNK_TILES * tileW; ctx.fillRect(leftX, y, width, borderCss); } }
-function drawMergedNeedsSolveOutlines(sx,sy,ex,ey,tileW){ const filled = new Set(); for (let cx = sx; cx <= ex; cx++) for (let cy = sy; cy <= ey; cy++){ const c = ensureChunk(cx,cy); if (c.needsSolve) filled.add(`${cx},${cy}`); } if (filled.size === 0) return; const edgeMap = new Map(); function addEdge(ax,ay,bx,by){ const a=`${ax},${ay}`, b=`${bx},${by}`; if (!edgeMap.has(a)) edgeMap.set(a,new Set()); if (!edgeMap.has(b)) edgeMap.set(b,new Set()); edgeMap.get(a).add(b); edgeMap.get(b).add(a); } for (const s of filled){ const [cx,cy] = s.split(',').map(Number); if (!filled.has(`${cx},${cy-1}`)) addEdge(cx,cy, cx+1,cy); if (!filled.has(`${cx+1},${cy}`)) addEdge(cx+1,cy, cx+1,cy+1); if (!filled.has(`${cx},${cy+1}`)) addEdge(cx+1,cy+1, cx,cy+1); if (!filled.has(`${cx-1},${cy}`)) addEdge(cx,cy+1, cx,cy); } const loops = []; const used = new Set(); for (const [pt, nset] of edgeMap.entries()){ for (const nb of nset){ const ekey = pt+'->'+nb; if (used.has(ekey)) continue; const loop = []; let cur = pt, prev = null; while (true){ loop.push(cur); const nbs = Array.from(edgeMap.get(cur) || []); let next = null; for (const cand of nbs){ const candKey = cur + '->' + cand; if (used.has(candKey)) continue; if (cand === prev) continue; next = cand; break; } if (!next){ for (const cand of nbs){ const candKey = cur + '->' + cand; if (!used.has(candKey)){ next = cand; break; } } } if (!next) break; used.add(cur + '->' + next); prev = cur; cur = next; if (cur === loop[0]) break; if (loop.length > 10000) break; } if (loop.length > 1) loops.push(loop.map(p => p.split(',').map(Number))); } } ctx.lineWidth = Math.max(2/DPR, 1/DPR); ctx.strokeStyle = '#d33'; ctx.fillStyle = 'rgba(220,40,40,0.02)'; for (const poly of loops){ if (poly.length < 2) continue; ctx.beginPath(); const chunkPixels = CHUNK_TILES * tileW; for (let i=0;i<poly.length;i++){ const [gx,gy] = poly[i]; const px = gx * chunkPixels, py = gy * chunkPixels; if (i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); } ctx.closePath(); ctx.fill(); ctx.stroke(); } }
-function drawRectBorder(x,y,w,h,color,thickness){ ctx.fillStyle=color; ctx.fillRect(x,y,w,thickness); ctx.fillRect(x,y+h-thickness,w,thickness); ctx.fillRect(x,y,thickness,h); ctx.fillRect(x+w-thickness,y,thickness,h); }
+
+/* simplified chunk draw (flags use emoji, bombs shown where exploded) */
+function drawChunkMinimized(chunk, tileW){
+  const chunkX = chunk.cx * CHUNK_TILES * tileW;
+  const chunkY = chunk.cy * CHUNK_TILES * tileW;
+  const chunkW = tileW * CHUNK_TILES;
+
+  let chunkBg = '#e6f7dc';
+  let covered = '#d1eac0';
+  let revealed = '#f7fff5';
+  if (chunk.biome === 'desert'){ chunkBg = '#fff0d6'; covered = '#f5e7b2'; revealed = '#fff7e0'; }
+  else if (chunk.biome === 'ice'){ chunkBg = '#f7fbff'; covered = '#eaf4ff'; revealed = '#ffffff'; }
+
+  ctx.fillStyle = chunk.disabled ? '#ffd7d9' : chunkBg;
+  ctx.fillRect(chunkX, chunkY, chunkW, chunkW);
+
+  if (chunk.disabled){
+    ctx.fillStyle = 'rgba(200,20,20,0.95)';
+    ctx.fillRect(chunkX, chunkY, chunkW, chunkW);
+  }
+
+  for (let i=0;i<chunk.tiles.length;i++){
+    const t = chunk.tiles[i];
+    const tx = i % CHUNK_TILES, ty = Math.floor(i/CHUNK_TILES);
+    const x = chunkX + tx*tileW, y = chunkY + ty*tileW;
+    if (!t.revealed){
+      ctx.fillStyle = covered; ctx.fillRect(x+1,y+1,tileW-2,tileW-2);
+    } else {
+      ctx.fillStyle = revealed; ctx.fillRect(x+1,y+1,tileW-2,tileW-2);
+    }
+    if (t.flagged){
+      if (tileW >= 6){
+        ctx.font = `${Math.floor(tileW*0.8)}px system-ui`;
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('🚩', x + tileW/2, y + tileW/2);
+      } else {
+        ctx.fillStyle='#c33'; ctx.fillRect(x+1,y+1,Math.max(1,tileW-2),Math.max(1,tileW-2));
+      }
+    }
+    if (t.exploded){
+      ctx.font = `${Math.max(8,Math.floor(tileW*0.9))}px system-ui`;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillStyle = '#fff';
+      ctx.fillText('💣', x + tileW/2, y + tileW/2);
+    }
+  }
+}
+
+/* detailed chunk draw - ice revealed tiles use covered colour (so numbers appear on same color) */
+function drawChunk(chunk, tileW){
+  const chunkX = chunk.cx * CHUNK_TILES * tileW;
+  const chunkY = chunk.cy * CHUNK_TILES * tileW;
+  const chunkW = tileW * CHUNK_TILES;
+
+  let chunkBg = '#e6f7dc';
+  let covered = '#d1eac0';
+  let revealed = '#f7fff5';
+  let grassColors = ["#dff7d9","#e7f8de","#e0f3d6","#f0f9e6"];
+  let numberOverrideToBlack = false;
+  let iceSpecial = false;
+
+  if (chunk.biome === 'desert'){
+    chunkBg = '#fff0d6';
+    covered = '#f5e7b2';
+    revealed = '#fff7e0';
+    grassColors = ["#f2e6b6","#f6e9c0","#efe1a8"];
+    numberOverrideToBlack = true;
+  } else if (chunk.biome === 'ice'){
+    chunkBg = '#f7fbff';
+    covered = '#eaf4ff';
+    revealed = '#ffffff';
+    grassColors = ["#f7fbff","#eef6ff","#f0f9ff"];
+    iceSpecial = true;
+  }
+
+  ctx.fillStyle = chunk.disabled ? '#e9efe0' : chunkBg;
+  ctx.fillRect(chunkX, chunkY, chunkW, chunkW);
+
+  const simplified = tileW <= 12;
+  if (simplified){
+    drawChunkMinimized(chunk, tileW);
+    if (chunk.disabled){ ctx.fillStyle='rgba(40,40,40,0.28)'; ctx.fillRect(chunkX,chunkY,chunkW,chunkW); ctx.fillStyle='#fff'; ctx.font=`${Math.max(12,Math.floor(chunkW/4))}px system-ui`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('💀', chunkX + chunkW/2, chunkY + chunkW/2); }
+    else if (chunk.solved){ ctx.fillStyle='rgba(40,40,40,0.12)'; ctx.fillRect(chunkX,chunkY,chunkW,chunkW); }
+    return;
+  }
+
+  for (let ty=0; ty<CHUNK_TILES; ty++){
+    for (let tx=0; tx<CHUNK_TILES; tx++){
+      const t = chunk.tiles[ty*CHUNK_TILES + tx];
+      const x = chunkX + tx*tileW, y = chunkY + ty*tileW;
+      ctx.fillStyle = grassColors[(Math.abs(chunk.cx*7 + chunk.cy*11 + tx*3 + ty*5) % grassColors.length)];
+      ctx.fillRect(x, y, tileW-1, tileW-1);
+
+      if (t.revealed){
+        if (iceSpecial){
+          ctx.fillStyle = covered;
+          ctx.fillRect(x+1,y+1,tileW-2,tileW-2);
+        } else {
+          ctx.fillStyle = (t.adj === 0) ? revealed : revealed;
+          ctx.fillRect(x+2,y+2,tileW-4,tileW-4);
+        }
+
+        if (t.mine){
+          if (t.exploded){
+            ctx.fillStyle = '#fff'; ctx.font = `${Math.max(12,Math.floor(tileW*0.9))}px system-ui`; ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText('💣', x+tileW/2, y+tileW/2);
+          } else {
+            ctx.fillStyle = '#222'; ctx.beginPath(); ctx.arc(x+tileW/2,y+tileW/2,tileW*0.22,0,Math.PI*2); ctx.fill();
+          }
+        } else if (t.adj > 0){
+          const fontsize = Math.max(10, Math.floor(tileW*0.55));
+          ctx.font = `700 ${fontsize}px "Segoe UI Rounded", "Helvetica Neue", Arial, system-ui`;
+          ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.lineWidth = Math.max(1, DPR*0.7) / DPR;
+          ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+          const numColor = numberOverrideToBlack ? '#000' : (NUMBER_COLORS[t.adj] || '#000');
+          ctx.strokeText(t.adj, x + tileW/2, y + tileW/2 + (DPR*0.3)/DPR);
+          ctx.fillStyle = numColor; ctx.fillText(t.adj, x + tileW/2, y + tileW/2 + (DPR*0.3)/DPR);
+        }
+      } else {
+        ctx.fillStyle = covered; ctx.fillRect(x+1,y+1,tileW-2,tileW-2);
+        ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(x+1,y+1,tileW/2,tileW/6);
+        if (t.flagged){ ctx.font = `${Math.floor(tileW*0.9)}px system-ui`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('🚩', x+tileW/2, y+tileW/2); }
+      }
+    }
+  }
+
+  if (chunk.disabled){
+    ctx.fillStyle = 'rgba(60,10,10,0.22)'; ctx.fillRect(chunkX, chunkY, chunkW, chunkW);
+    ctx.fillStyle = '#fff'; ctx.font = `${Math.max(18,Math.floor(chunkW/6))}px "Segoe UI", system-ui`; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('💀', chunkX + chunkW/2, chunkY + chunkW/2);
+    for (let ty=0; ty<CHUNK_TILES; ty++){
+      for (let tx=0; tx<CHUNK_TILES; tx++){
+        const t = chunk.tiles[ty*CHUNK_TILES + tx];
+        if (t.revealed && t.adj > 0 && !t.mine){
+          const x = chunkX + tx*tileW, y = chunkY + ty*tileW;
+          const fontsize = Math.max(10, Math.floor(tileW*0.55));
+          ctx.font = `700 ${fontsize}px "Segoe UI Rounded", "Helvetica Neue", Arial, system-ui`;
+          ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.lineWidth = Math.max(1, DPR*0.7) / DPR;
+          ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+          const numColor = numberOverrideToBlack ? '#000' : (NUMBER_COLORS[t.adj] || '#000');
+          ctx.strokeText(t.adj, x + tileW/2, y + tileW/2 + (DPR*0.3)/DPR);
+          ctx.fillStyle = numColor;
+          ctx.fillText(t.adj, x + tileW/2, y + tileW/2 + (DPR*0.3)/DPR);
+        }
+      }
+    }
+  } else if (chunk.solved){
+    ctx.fillStyle = 'rgba(40,40,40,0.12)'; ctx.fillRect(chunkX, chunkY, chunkW, chunkW);
+  }
+
+  if (chunk.reviveTime && (Date.now() - chunk.reviveTime) <= 2200){
+    drawRectBorder(chunkX, chunkY, chunkW, chunkW, '#d33', Math.max(1 / DPR, 1 / DPR));
+  }
+}
+
+/* grid and merged outlines (unchanged) */
+function drawGlobalChunkGrid(startChunkX, startChunkY, endChunkX, endChunkY, tileW){
+  const borderCss = Math.max(1 / DPR, 0.5 / DPR);
+  ctx.fillStyle = `rgba(0,0,0,0.04)`;
+  const topY = startChunkY * CHUNK_TILES * tileW;
+  const height = (endChunkY - startChunkY + 1) * CHUNK_TILES * tileW;
+  for (let cx = startChunkX; cx <= endChunkX + 1; cx++){
+    const x = cx * CHUNK_TILES * tileW;
+    ctx.fillRect(x, topY, borderCss, height);
+  }
+  const leftX = startChunkX * CHUNK_TILES * tileW;
+  const width = (endChunkX - startChunkX + 1) * CHUNK_TILES * tileW;
+  for (let cy = startChunkY; cy <= endChunkY + 1; cy++){
+    const y = cy * CHUNK_TILES * tileW;
+    ctx.fillRect(leftX, y, width, borderCss);
+  }
+}
+
+function drawMergedNeedsSolveOutlines(startChunkX, startChunkY, endChunkX, endChunkY, tileW){
+  const filled = new Set();
+  for (let cx = startChunkX; cx <= endChunkX; cx++){
+    for (let cy = startChunkY; cy <= endChunkY; cy++){
+      const chunk = ensureChunk(cx, cy);
+      if (chunk.needsSolve) filled.add(`${cx},${cy}`);
+    }
+  }
+  if (filled.size === 0) return;
+  const edgeMap = new Map();
+  function addEdge(ax,ay,bx,by){ const a=`${ax},${ay}`, b=`${bx},${by}`; if (!edgeMap.has(a)) edgeMap.set(a,new Set()); if (!edgeMap.has(b)) edgeMap.set(b,new Set()); edgeMap.get(a).add(b); edgeMap.get(b).add(a); }
+  for (const s of filled){
+    const [cx,cy] = s.split(',').map(Number);
+    if (!filled.has(`${cx},${cy-1}`)) addEdge(cx,cy, cx+1,cy);
+    if (!filled.has(`${cx+1},${cy}`)) addEdge(cx+1,cy, cx+1,cy+1);
+    if (!filled.has(`${cx},${cy+1}`)) addEdge(cx+1,cy+1, cx,cy+1);
+    if (!filled.has(`${cx-1},${cy}`)) addEdge(cx,cy+1, cx,cy);
+  }
+  const loops = [];
+  const used = new Set();
+  for (const [pt, nset] of edgeMap.entries()){
+    for (const nb of nset){
+      const ekey = pt+'->'+nb;
+      if (used.has(ekey)) continue;
+      const loop = [];
+      let cur = pt, prev = null;
+      while (true){
+        loop.push(cur);
+        const nbs = Array.from(edgeMap.get(cur) || []);
+        let next = null;
+        for (const cand of nbs){
+          const candKey = cur + '->' + cand;
+          if (used.has(candKey)) continue;
+          if (cand === prev) continue;
+          next = cand; break;
+        }
+        if (!next){
+          for (const cand of nbs){
+            const candKey = cur + '->' + cand;
+            if (!used.has(candKey)){ next = cand; break; }
+          }
+        }
+        if (!next) break;
+        used.add(cur + '->' + next);
+        prev = cur;
+        cur = next;
+        if (cur === loop[0]) break;
+        if (loop.length > 10000) break;
+      }
+      if (loop.length > 1) loops.push(loop.map(p => p.split(',').map(Number)));
+    }
+  }
+  ctx.lineWidth = Math.max(2/DPR, 1/DPR);
+  ctx.strokeStyle = '#d33';
+  ctx.fillStyle = 'rgba(220,40,40,0.02)';
+  for (const poly of loops){
+    if (poly.length < 2) continue;
+    ctx.beginPath();
+    const chunkPixels = CHUNK_TILES * tileW;
+    for (let i=0;i<poly.length;i++){
+      const [gx,gy] = poly[i];
+      const px = gx * chunkPixels, py = gy * chunkPixels;
+      if (i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+}
+
+function drawRectBorder(x,y,w,h,color,thickness){
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, w, thickness);
+  ctx.fillRect(x, y + h - thickness, w, thickness);
+  ctx.fillRect(x, y, thickness, h);
+  ctx.fillRect(x + w - thickness, y, thickness, h);
+}
+
 draw();
 
-/* ---------- Pointer / touch handling with autosave on interaction and cleanup ---------- */
-const pointers = new Map(); let pinch=null, pointerDownInfo = {}, isPanning=false, lastPan=0;
-function clientToLogical(cx,cy){ const r = canvas.getBoundingClientRect(); return { x: cx - r.left, y: cy - r.top }; }
-function distance(a,b){ const dx=a.clientX-b.clientX, dy=a.clientY-b.clientY; return Math.hypot(dx,dy); }
-function centroid(map){ let sx=0,sy=0,n=0; for (const v of map.values()){ sx+=v.clientX; sy+=v.clientY; n++; } if (n===0) return null; return { clientX:sx/n, clientY:sy/n }; }
+/* ===== Input handling & autosave (unchanged behavior; saveCurrent used) ===== */
+const pointers = new Map();
+let pinchState = null;
+let pointerDownInfo = {};
+let isPinching=false, isPanning=false, lastPanTime=0;
+function clientToLogical(clientX,clientY){ const rect = canvas.getBoundingClientRect(); const cx = (clientX - rect.left); const cy = (clientY - rect.top); return { logicalX: cx, logicalY: cy }; }
+function getDistance(a,b){ const dx=a.clientX-b.clientX, dy=a.clientY-b.clientY; return Math.hypot(dx,dy); }
+function computeCentroid(mapLike){ let sx=0,sy=0,n=0; for(const v of mapLike.values()){ sx+=v.clientX; sy+=v.clientY; n++; } if(n===0) return null; return { clientX:sx/n, clientY:sy/n }; }
 
-/* pointerdown: capture, track and quick-save */
-canvas.addEventListener('pointerdown', (e)=>{
-  try{ canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId); }catch(_){} // safe
-  pointers.set(e.pointerId, { clientX:e.clientX, clientY:e.clientY });
-  pointerDownInfo[e.pointerId] = { startX:e.clientX, startY:e.clientY, startT:Date.now(), moved:false, panned:false };
+document.addEventListener('contextmenu', (e)=>{ e.preventDefault(); });
+
+function handlePointerDown(e){
+  canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+  pointerDownInfo[e.pointerId] = { startClientX: e.clientX, startClientY: e.clientY, startTime: Date.now(), moved:false, panned:false };
   if (pointers.size === 2){
+    isPinching = true;
     const arr = Array.from(pointers.values());
-    pinch = { startDist: distance(arr[0], arr[1]), startScale: cam.scale };
-    const mid = centroid(pointers); const logical = clientToLogical(mid.clientX, mid.clientY);
-    pinch.startMidWorldTileX = (logical.x / (DEFAULT_TILE * cam.scale)) + cam.x;
-    pinch.startMidWorldTileY = (logical.y / (DEFAULT_TILE * cam.scale)) + cam.y;
+    pinchState = { startDist: getDistance(arr[0], arr[1]), startScale: cam.scale };
+    const midClientX = (arr[0].clientX + arr[1].clientX)/2;
+    const midClientY = (arr[0].clientY + arr[1].clientY)/2;
+    const logical = clientToLogical(midClientX, midClientY);
+    const cssTile = DEFAULT_TILE * cam.scale;
+    pinchState.startMidWorldTileX = (logical.logicalX / cssTile) + cam.x;
+    pinchState.startMidWorldTileY = (logical.logicalY / cssTile) + cam.y;
   }
-  scheduleImmediateSave(); // autosave on interaction (throttled)
-}, { passive:false });
+  saveCurrent(); // immediate save on interaction
+}
 
-canvas.addEventListener('pointermove', (e)=>{
+function handlePointerMove(e){
   if (!pointers.has(e.pointerId)) return;
-  const prevCent = centroid(pointers);
+  const prevCentroid = computeCentroid(pointers);
   const prev = pointers.get(e.pointerId);
-  const dx = e.clientX - prev.clientX, dy = e.clientY - prev.clientY;
-  pointers.set(e.pointerId, { clientX:e.clientX, clientY:e.clientY });
-  if (pointerDownInfo[e.pointerId] && (Math.abs(dx)>0.5 || Math.abs(dy)>0.5)) pointerDownInfo[e.pointerId].moved = true;
-  const newCent = centroid(pointers);
+  const dxClient = e.clientX - prev.clientX, dyClient = e.clientY - prev.clientY;
+  pointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+
+  const logicalDx = dxClient;
+  const logicalDy = dyClient;
+  if (pointerDownInfo[e.pointerId] && (Math.abs(logicalDx) > 0.5 || Math.abs(logicalDy) > 0.5)) pointerDownInfo[e.pointerId].moved = true;
+  const newCentroid = computeCentroid(pointers);
+
   const cssTile = DEFAULT_TILE * cam.scale;
+
   if (pointers.size >= 2){
-    if (prevCent && newCent){
-      const cx = newCent.clientX - prevCent.clientX, cy = newCent.clientY - prevCent.clientY;
-      if (Math.hypot(cx,cy) >= 3){ isPanning = true; lastPan = Date.now(); for (const k in pointerDownInfo) if (pointerDownInfo.hasOwnProperty(k)) pointerDownInfo[k].panned = true; }
-      if (!pinch) { cam.x -= cx / cssTile; cam.y -= cy / cssTile; }
+    if (prevCentroid && newCentroid){
+      const centroidDxClient = newCentroid.clientX - prevCentroid.clientX;
+      const centroidDyClient = newCentroid.clientY - prevCentroid.clientY;
+      const centroidLogicalDx = centroidDxClient;
+      const centroidLogicalDy = centroidDyClient;
+      if (Math.hypot(centroidLogicalDx, centroidLogicalDy) >= 3){
+        isPanning = true; lastPanTime = Date.now();
+        for (const id in pointerDownInfo) if (pointerDownInfo.hasOwnProperty(id)) pointerDownInfo[id].panned = true;
+      }
+      if (!pinchState) {
+        cam.x -= centroidLogicalDx / cssTile;
+        cam.y -= centroidLogicalDy / cssTile;
+      }
     }
-    if (pinch && pointers.size >= 2){
-      const arr = Array.from(pointers.values()); const d = distance(arr[0], arr[1]); const r = d / pinch.startDist;
-      const newScale = Math.min(3, Math.max(0.12, pinch.startScale * r));
-      const midX = (arr[0].clientX + arr[1].clientX)/2, midY = (arr[0].clientY + arr[1].clientY)/2;
-      const logical = clientToLogical(midX, midY);
-      cam.x = pinch.startMidWorldTileX - (logical.x / (DEFAULT_TILE * newScale));
-      cam.y = pinch.startMidWorldTileY - (logical.y / (DEFAULT_TILE * newScale));
+    if (pinchState && pointers.size >= 2){
+      const arr = Array.from(pointers.values());
+      const a = arr[0], b = arr[1];
+      const dist = getDistance(a,b);
+      const ratio = dist / pinchState.startDist;
+      const newScale = Math.min(3, Math.max(0.12, pinchState.startScale * ratio));
+      const midClientX = (a.clientX + b.clientX)/2;
+      const midClientY = (a.clientY + b.clientY)/2;
+      const logicalMid = clientToLogical(midClientX, midClientY);
+      cam.x = pinchState.startMidWorldTileX - (logicalMid.logicalX / (DEFAULT_TILE * newScale));
+      cam.y = pinchState.startMidWorldTileY - (logicalMid.logicalY / (DEFAULT_TILE * newScale));
       cam.scale = newScale;
     }
     return;
   }
-  if (pointers.size === 1 && !pinch){
-    if (Math.hypot(dx,dy) >= 3){ isPanning = true; lastPan = Date.now(); if (pointerDownInfo[e.pointerId]) pointerDownInfo[e.pointerId].panned = true; }
-    const cssNow = DEFAULT_TILE * cam.scale;
-    cam.x -= dx / cssNow; cam.y -= dy / cssNow;
-  }
-}, { passive:false });
 
-canvas.addEventListener('pointerup', (e)=>{
-  try{ canvas.releasePointerCapture && canvas.releasePointerCapture(e.pointerId); }catch(_){} // safe
+  if (pointers.size === 1 && !pinchState){
+    if (Math.hypot(logicalDx, logicalDy) >= 3){
+      isPanning = true; lastPanTime = Date.now(); if (pointerDownInfo[e.pointerId]) pointerDownInfo[e.pointerId].panned = true;
+    }
+    const cssTileNow = DEFAULT_TILE * cam.scale;
+    cam.x -= logicalDx / cssTileNow;
+    cam.y -= logicalDy / cssTileNow;
+  }
+}
+
+function handlePointerUp(e){
+  canvas.releasePointerCapture && canvas.releasePointerCapture(e.pointerId);
   const down = pointerDownInfo[e.pointerId];
   const now = Date.now();
-  const startX = down?down.startX:e.clientX, startY = down?down.startY:e.clientY;
-  const moveX = e.clientX - startX, moveY = e.clientY - startY;
-  const moveDist = Math.hypot(moveX, moveY);
-  const dt = down? now - down.startT : 0;
-  const markedPanned = !!(down && down.panned);
-  const panRecent = (now - lastPan) <= 140;
+  const startClientX = down ? down.startClientX : e.clientX;
+  const startClientY = down ? down.startClientY : e.clientY;
+  const startTime = down ? down.startTime : now;
+  const endClientX = e.clientX, endClientY = e.clientY;
+  const moveLogicalX = (endClientX - startClientX);
+  const moveLogicalY = (endClientY - startClientY);
+  const moveDist = Math.hypot(moveLogicalX, moveLogicalY);
+  const timeDelta = now - startTime;
+
+  const pointerMarkedPanned = !!(down && down.panned);
+  const panHappenedRecently = (now - lastPanTime) <= 140;
   const pointerMoved = !!(down && down.moved);
-  const wasPinch = !!pinch;
+  const wasPinching = isPinching;
+
   pointers.delete(e.pointerId);
   delete pointerDownInfo[e.pointerId];
-  if (pointers.size < 2) pinch = null;
-  const suppressed = markedPanned || panRecent || isPanning;
-  const allowTap = !suppressed && !pointerMoved && moveDist <= 8 && dt <= 400 && !wasPinch && pointers.size === 0;
-  if (pointers.size === 0) setTimeout(()=>{ isPanning=false; },0);
+
+  if (pointers.size < 2) { pinchState = null; isPinching = false; }
+
+  const suppressedByPan = pointerMarkedPanned || panHappenedRecently || isPanning;
+  const allowTap = !suppressedByPan && !pointerMoved && moveDist <= 8 && timeDelta <= 400 && !wasPinching && pointers.size === 0;
+
+  if (pointers.size === 0) setTimeout(()=>{ isPanning = false; }, 0);
+
   if (allowTap){
-    const logical = clientToLogical(e.clientX, e.clientY);
-    const css = DEFAULT_TILE * cam.scale;
-    const wx = Math.floor((logical.x / css) + cam.x);
-    const wy = Math.floor((logical.y / css) + cam.y);
-    if (mode === 'shovel') revealTile(wx,wy); else toggleFlag(wx,wy);
-    scheduleImmediateSave();
+    const logical = clientToLogical(endClientX, endClientY);
+    const cssTileNow = DEFAULT_TILE * cam.scale;
+    const wx = Math.floor((logical.logicalX / cssTileNow) + cam.x);
+    const wy = Math.floor((logical.logicalY / cssTileNow) + cam.y);
+    if (mode === 'shovel') revealTile(wx, wy);
+    else toggleFlag(wx, wy);
   }
-  scheduleImmediateSave(); // also quick save on pointerup (throttled)
-}, { passive:false });
+  saveCurrent();
+}
 
-canvas.addEventListener('pointercancel', (e)=>{ pointers.delete(e.pointerId); delete pointerDownInfo[e.pointerId]; scheduleImmediateSave(); });
+canvas.addEventListener('pointerdown', handlePointerDown);
+canvas.addEventListener('pointermove', handlePointerMove, { passive:false });
+canvas.addEventListener('pointerup', handlePointerUp);
+canvas.addEventListener('pointercancel', handlePointerUp);
+canvas.addEventListener('pointerout', handlePointerUp);
+canvas.addEventListener('pointerleave', handlePointerUp);
+canvas.addEventListener('dblclick', (e)=>e.preventDefault());
 
-/* --------------------- Visibility / resume cleanup (fix ghost finger) --------------------- */
+/* visibility cleanup (keep) */
 function clearPointerStateOnHidden(){
-  // try to release any pointer captures and clear maps
   try{
-    // release known pointer captures (safe-guard)
     for (const pid of Array.from(pointers.keys())){
       try{ canvas.releasePointerCapture && canvas.releasePointerCapture(pid); }catch(_){}
     }
   }catch(_){}
   pointers.clear();
   pointerDownInfo = {};
-  pinch = null;
+  pinchState = null;
   isPanning = false;
-  // optional: reset any transient state
 }
 document.addEventListener('visibilitychange', ()=>{
   if (document.hidden){
     clearPointerStateOnHidden();
-    // also quick save when leaving
-    scheduleImmediateSave();
+    saveCurrent();
   } else {
-    // regained focus — clear again to be safe
     clearPointerStateOnHidden();
   }
 });
-window.addEventListener('pagehide', ()=>{ clearPointerStateOnHidden(); scheduleImmediateSave(); });
+window.addEventListener('pagehide', ()=>{ clearPointerStateOnHidden(); saveCurrent(); });
 window.addEventListener('focus', ()=>{ clearPointerStateOnHidden(); });
 
-/* --------------------- World UI bindings --------------------- */
+/* ===== UI & Menu (only minimal changes) ===== */
 const overlay = document.getElementById('overlay');
 const btnNew = document.getElementById('btnNew'), btnLoad = document.getElementById('btnLoad'), btnSettings = document.getElementById('btnSettings'), btnHow = document.getElementById('btnHow');
 const panelNew = document.getElementById('panelNew'), panelLoad = document.getElementById('panelLoad'), panelSettings = document.getElementById('panelSettings'), panelHow = document.getElementById('panelHow');
-const mainActions = document.getElementById('mainActions'); const btnResume = document.getElementById('btnResume');
+const mainActions = document.getElementById('mainActions');
+const btnResume = document.getElementById('btnResume'), btnSave = document.getElementById('btnSave');
 const createBtn = document.getElementById('createBtn'), cancelNew = document.getElementById('cancelNew');
 const cancelLoad = document.getElementById('cancelLoad'), cancelSettings = document.getElementById('cancelSettings'), cancelHow = document.getElementById('cancelHow');
 const newName = document.getElementById('newName'), newSeed = document.getElementById('newSeed');
@@ -488,12 +921,22 @@ const worldListEl = document.getElementById('worldList');
 const pauseBtn = document.getElementById('pauseBtn');
 const shovelBtn = document.getElementById('shovelBtn'), flagBtn = document.getElementById('flagBtn'), reviveBtn = document.getElementById('reviveBtn');
 
-let mode = 'shovel'; updateToolUI();
+let mode = 'shovel';
+function updateToolUI(){ shovelBtn.classList.toggle('active', mode==='shovel'); flagBtn.classList.toggle('active', mode==='flag'); }
+updateToolUI();
 
-/* overlay control */
-function openOverlay(){ overlay.style.display='flex'; overlay.setAttribute('aria-hidden','false'); showMain(); updateSelectedWorldInfo(); }
+/* track overlay opener */
+let lastOverlaySource = null;
+function openOverlay(source){
+  lastOverlaySource = source || null;
+  overlay.style.display='flex';
+  overlay.setAttribute('aria-hidden','false');
+  showMain();
+  updateSelectedWorldInfo();
+  updateResumeVisibility();
+}
 function closeOverlay(){ overlay.style.display='none'; overlay.setAttribute('aria-hidden','true'); }
-function showMain(){ mainActions.style.display='block'; panelNew.style.display='none'; panelLoad.style.display='none'; panelSettings.style.display='none'; panelHow.style.display='none'; updateSelectedWorldInfo(); checkResumeVisible(); }
+function showMain(){ mainActions.style.display='block'; panelNew.style.display='none'; panelLoad.style.display='none'; panelSettings.style.display='none'; panelHow.style.display='none'; updateSelectedWorldInfo(); updateResumeVisibility(); }
 function showNew(){ mainActions.style.display='none'; panelNew.style.display='block'; panelLoad.style.display='none'; panelSettings.style.display='none'; panelHow.style.display='none'; }
 function showLoad(){ mainActions.style.display='none'; panelNew.style.display='none'; panelLoad.style.display='block'; panelSettings.style.display='none'; panelHow.style.display='none'; refreshWorldList(); }
 function showSettings(){ mainActions.style.display='none'; panelNew.style.display='none'; panelLoad.style.display='none'; panelSettings.style.display='block'; }
@@ -503,10 +946,16 @@ btnNew.addEventListener('click', ()=>{ showNew(); });
 btnLoad.addEventListener('click', ()=>{ showLoad(); });
 btnSettings.addEventListener('click', ()=>{ showSettings(); });
 btnHow.addEventListener('click', ()=>{ showHow(); });
-
-pauseBtn.addEventListener('click', ()=>{ openOverlay(); });
+pauseBtn.addEventListener('click', ()=>{ openOverlay('pause'); });
 
 btnResume.addEventListener('click', ()=>{ if (currentWorldId) closeOverlay(); else alert('Please create or load a world first.'); });
+
+btnSave.addEventListener('click', async ()=>{
+  if (!currentWorldId) { alert('No world to save.'); return; }
+  const ok = await saveCurrent(); // now returns promise-like value (boolean)
+  if (ok) flashSaved();
+  else alert('Save failed — check console for details.');
+});
 
 cancelNew.addEventListener('click', ()=> showMain());
 cancelLoad.addEventListener('click', ()=> showMain());
@@ -528,7 +977,6 @@ function createWorld(name, seed){
   worlds.unshift(rec); saveWorldMeta(); loadWorldById(id);
 }
 
-/* world list UI */
 function refreshWorldList(){
   worldListEl.innerHTML = '';
   if (worlds.length === 0){ worldListEl.innerHTML = '<div class="smallNote">No worlds yet — create one.</div>'; return; }
@@ -547,9 +995,8 @@ function refreshWorldList(){
   }
 }
 
-function deleteWorld(id){ worlds = worlds.filter(w => w.id !== id); saveWorldMeta(); try{ localStorage.removeItem(SAVE_PREFIX + id); }catch(e){} if (currentWorldId === id){ currentWorldId = null; currentSeedString=''; currentSeedNumber=0; chunks.clear(); } updateSelectedWorldInfo(); checkResumeVisible(); }
+function deleteWorld(id){ worlds = worlds.filter(w => w.id !== id); saveWorldMeta(); try{ localStorage.removeItem(SAVE_PREFIX + id); }catch(e){} if (currentWorldId === id){ currentWorldId = null; currentSeedString=''; currentSeedNumber=0; chunks.clear(); } updateSelectedWorldInfo(); updateResumeVisibility(); }
 
-/* load world */
 function loadWorldById(id){
   const w = worlds.find(x=>x.id===id); if (!w) return;
   currentWorldId = w.id; currentSeedString = w.seed; currentSeedNumber = hashStringToNumber(currentSeedString);
@@ -572,7 +1019,7 @@ function loadWorldById(id){
   } else {
     cam = { x:0, y:0, scale:1 };
   }
-  updateNeedsSolve(); updateSelectedWorldInfo(); checkResumeVisible();
+  updateNeedsSolve(); updateSelectedWorldInfo(); updateResumeVisibility();
 }
 
 function updateSelectedWorldInfo(){
@@ -580,10 +1027,18 @@ function updateSelectedWorldInfo(){
   if (!currentWorldId){ el.textContent = 'No world selected'; } else { const w = worlds.find(x=>x.id===currentWorldId); el.textContent = `Selected: ${w ? w.name : currentWorldId} (seed: ${currentSeedString})`; }
 }
 
-/* Resume visibility */
-function checkResumeVisible(){ if (currentWorldId) btnResume.style.display = 'inline-block'; else btnResume.style.display = 'none'; }
+function updateResumeVisibility(){
+  if (currentWorldId) btnResume.style.display = 'inline-block'; else btnResume.style.display = 'none';
+  // Show Save button only when overlay opened from pause button
+  if (lastOverlaySource === 'pause' && currentWorldId){
+    btnSave.style.display = 'inline-block';
+  } else {
+    btnSave.style.display = 'none';
+  }
+}
 
-/* autosave */
+/* ---------- robust saving (FIX) ---------- */
+/* serialize chunks -> plain array */
 function serializeChunks(){
   const arr = [];
   for (const [k,c] of chunks.entries()){
@@ -591,26 +1046,62 @@ function serializeChunks(){
   }
   return arr;
 }
+
+/* saveCurrent returns true on success, false on failure */
 function saveCurrent(){
-  if (!currentWorldId) return;
-  try{ const payload = { camera: cam, firstClickDone: !!firstClickDone, chunks: serializeChunks(), t: Date.now() }; localStorage.setItem(SAVE_PREFIX + currentWorldId, JSON.stringify(payload)); console.log('Saved', currentWorldId); }catch(e){ console.warn('Save failed'); }
+  if (!currentWorldId) return false;
+  try{
+    const key = SAVE_PREFIX + currentWorldId;
+    const payload = { camera: cam, firstClickDone: !!firstClickDone, chunks: serializeChunks(), t: Date.now() };
+    const s = JSON.stringify(payload);
+    localStorage.setItem(key, s);
+    // verify the write by reading it back
+    try{
+      const read = localStorage.getItem(key);
+      if (!read) throw new Error('read back empty');
+      JSON.parse(read); // will throw if corrupted
+      // update worlds metadata lastPlayed
+      const w = worlds.find(x=>x.id === currentWorldId);
+      if (w){ w.lastPlayed = Date.now(); saveWorldMeta(); }
+      // show saved badge briefly
+      showSavedBadge();
+      console.log('Save successful for', currentWorldId);
+      return true;
+    }catch(err){
+      console.warn('Save verification failed', err);
+      return false;
+    }
+  }catch(e){
+    console.warn('Save failed', e);
+    return false;
+  }
 }
-function scheduleImmediateSave(){ if (!currentWorldId) return; if (window.__lastQuick && Date.now() - window.__lastQuick < 700) return; window.__lastQuick = Date.now(); saveCurrent(); }
-setInterval(saveCurrent, 10000);
-window.addEventListener('beforeunload', saveCurrent);
 
-/* tool toggles */
-shovelBtn.addEventListener('click', ()=>{ mode='shovel'; updateToolUI(); });
-flagBtn.addEventListener('click', ()=>{ mode='flag'; updateToolUI(); });
-reviveBtn.addEventListener('click', ()=>{ alert('Revive item not implemented yet.'); });
-function updateToolUI(){ shovelBtn.classList.toggle('active', mode==='shovel'); flagBtn.classList.toggle('active', mode==='flag'); }
+/* background autosave and beforeunload */
+setInterval(()=>{ if (currentWorldId) saveCurrent(); }, 3000);
+window.addEventListener('beforeunload', ()=>{ if (currentWorldId) saveCurrent(); });
 
-/* initial UI behavior: show main menu on open; require world to play */
-openOverlay(); showMain(); checkResumeVisible();
+/* small saved flash */
+const savedBadge = document.getElementById('savedBadge');
+let savedBadgeTimer = null;
+function showSavedBadge(){
+  if (!savedBadge) return;
+  savedBadge.style.display = 'block';
+  clearTimeout(savedBadgeTimer);
+  savedBadgeTimer = setTimeout(()=>{ savedBadge.style.display = 'none'; }, 900);
+}
+function flashSaved(){ showSavedBadge(); }
 
-/* expose debug */
+/* initial behavior */
+if (worlds.length === 0){
+  openOverlay(); showHow();
+  document.getElementById('newSeed').value = 'seed-' + Math.floor(Math.random()*1e9);
+} else {
+  openOverlay(); showMain();
+  updateSelectedWorldInfo();
+}
+
 window.__ims = { worlds, chunks, loadWorldById, createWorld, saveCurrent, cam };
-
 </script>
 </body>
 </html>
